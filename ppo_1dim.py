@@ -1,8 +1,10 @@
+'''
+使用stable-baselines3库中的PPO算法训练模型，解决function optimization问题
+'''
 import gymnasium as gym
 from function_env import FunctionEnv
 from stable_baselines3 import PPO
 import numpy as np
-import matplotlib.pyplot as plt
 
 # 定义目标函数
 def objective(x):
@@ -20,18 +22,25 @@ def ackley_function(x):
 
 # 创建环境
 env = FunctionEnv(
-    function=ackley_function,
+    function=objective,
     dim=1,
     bound=[-10, 10],
     max_steps=20
 )
+
+# 创建PPO模型
+model = PPO("MlpPolicy", env, verbose = 1)
+model.learn(total_timesteps=30_000)
+
+# 保存模型
+model.save("ppo_function")
+del model
 
 # 加载模型
 model = PPO.load("ppo_function")
 
 # 测试模型
 obs, info = env.reset()
-init_obs = obs
 while True:
     action, _states = model.predict(obs, deterministic=True)
     obs, reward, terminal, truncated, info = env.step(action)
@@ -40,35 +49,5 @@ while True:
 
     if terminal or truncated:
         break
-print(f'init_obs: {init_obs}, init_val: {info["value"]}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
-env.close()
 
-# 绘制动作预测图
-# x = np.linspace(-10, 10, 1000, dtype=np.float32)
-state_list = []
-action_list = []
-action_perfect_list = []
-num = 1000
-for i in range(num):
-    # x = np.random.uniform(-10, 10, 1)
-    x = [i/num*20-10]
-    # print(x)
-    y, _states = model.predict(x, deterministic=True)
-    if x[0] < -1:
-        y_perfect = 1.0
-    elif x[0] > 1:
-        y_perfect = -1.0
-    else:
-        y_perfect = -x[0]
-    state_list.append(x)
-    action_list.append(y)
-    action_perfect_list.append(y_perfect)
-    # plt.plot(x, y, 'r,')
-plt.plot(state_list, action_list)
-plt.plot(state_list, action_perfect_list)
-plt.legend(['predict', 'perfect'])
-plt.xlabel('state')
-plt.ylabel('action')
-plt.title('state-action')
-plt.grid()
-plt.show()
+env.close()
