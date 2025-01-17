@@ -25,12 +25,13 @@ env = FunctionEnv(
     function=objective,
     dim=1,
     bound=[-10, 10],
-    max_steps=20
+    step_size=0.1,
+    max_steps=200
 )
 
 # 创建PPO模型
-model = PPO("MlpPolicy", env, verbose = 1)
-model.learn(total_timesteps=30_000)
+model = PPO("MlpPolicy", env, verbose = 1, device='cpu')
+model.learn(total_timesteps=300_000)
 
 # 保存模型
 model.save("ppo_function")

@@ -50,7 +50,7 @@ class FunctionEnv(gym.Env):
         self.current_steps += 1
         self.last_val = self.val
         self.last_best_val = self.best_value
-        self.state = np.clip(self.state + action, self.bound[0], self.bound[1])
+        self.state = np.clip(self.state + action * self.step_size ,self.bound[0], self.bound[1])
         self.val = self.function(self.state)
         if self.val < self.best_value:
             self.best = self.state
@@ -58,10 +58,10 @@ class FunctionEnv(gym.Env):
         terminal = False
         # 判断是否结束
         truncated = (self.current_steps >= self.max_steps)  # 直接使用布尔数组比较
-        # reward = -self.val  # 新状态函数值的绝对大小
+        reward = -self.val  # 新状态函数值的绝对大小
         # reward = self.last_val - self.val  # 当前动作的改进幅度
         # reward = self.last_best_val - self.best_value   # 最优值的改进幅度
-        reward = (self.last_val - self.val) + (-self.val) + (self.last_best_val - self.best_value)  # 三者的综合
+        # reward = (self.last_val - self.val) + (-self.val) + (self.last_best_val - self.best_value)  # 三者的综合
         obsevation = self._get_obs()
         info = self._get_info()
 
