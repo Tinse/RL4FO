@@ -1,10 +1,9 @@
 '''
-使用stable-baselines3库中的PPO算法训练模型，解决function optimization问题
+DQN算法优化1维函数
 '''
-import gymnasium as gym
-from function_env import FunctionEnv
-from stable_baselines3 import PPO
 import numpy as np
+from stable_baselines3 import DQN
+from function_env_discrete import FunctionDisEnv
 
 # 定义目标函数
 def objective(x):
@@ -20,25 +19,24 @@ def ackley_function(x):
     result = part1 + part2 + a + np.exp(1)
     return result
 
-# 创建环境
-env = FunctionEnv(
-    function=objective,
+# 定义环境
+env = FunctionDisEnv(
+    function=ackley_function,
     dim=1,
     bound=[-10, 10],
-    step_size=0.1,
-    max_steps=200
+    max_steps=20
 )
 
-# 创建PPO模型
-model = PPO("MlpPolicy", env, verbose = 1, device='cpu')
-model.learn(total_timesteps=1000_000)
+model = DQN.load("dqn_1dim", env)
 
-# 保存模型
-model.save("ppo_function")
+# 定义模型
+# model = DQN("MlpPolicy", env, verbose=1)
+model.learn(total_timesteps=100_000, log_interval=100)
+model.save("dqn_1dim")
 del model
 
 # 加载模型
-model = PPO.load("ppo_function")
+model = DQN.load("dqn_1dim")
 
 # 测试模型
 obs, info = env.reset()
@@ -52,5 +50,5 @@ while True:
 
     if terminal or truncated:
         break
-print(f'init_obs: {init_obs}, init_val: {init_val}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
+print(f'init_obs: {init_obs}, init_val: {init_val}, \nfinal_state: {obs}, final_val: {info["value"]}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
 env.close()

@@ -5,12 +5,12 @@
 import gymnasium as gym
 import numpy as np
 
-class FunctionEnv(gym.Env):
+class FunctionDisEnv(gym.Env):
     def __init__(self, function, dim, bound, step_size = 1, max_steps=100):
         self.function = function
         self.dim = dim
         self.bound = bound
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(dim,), dtype=np.float32)
+        self.action_space = gym.spaces.Discrete(2)  # 0: -1, 1: 1
         self.observation_space = gym.spaces.Box(low=bound[0],high=bound[1], shape=(dim,), dtype=np.float32)
         self.step_size = step_size
         self.state = None
@@ -50,7 +50,7 @@ class FunctionEnv(gym.Env):
         self.current_steps += 1
         self.last_val = self.val
         self.last_best_val = self.best_value
-        self.state = np.clip(self.state + action * self.step_size ,self.bound[0], self.bound[1])
+        self.state = np.clip(self.state + (action * 2 - 1) * self.step_size ,self.bound[0], self.bound[1])
         self.val = self.function(self.state)
         if self.val < self.best_value:
             self.best = self.state
@@ -59,8 +59,8 @@ class FunctionEnv(gym.Env):
         # 判断是否结束
         truncated = (self.current_steps >= self.max_steps)  # 直接使用布尔数组比较
         # reward = -self.val  # 新状态函数值的绝对大小
-        reward = self.last_val - self.val  # 当前动作的改进幅度
-        # reward = self.last_best_val - self.best_value   # 最优值的改进幅度
+        # reward = self.last_val - self.val  # 当前动作的改进幅度
+        reward = self.last_best_val - self.best_value   # 最优值的改进幅度
         # reward = (self.last_val - self.val) + (-self.val) + (self.last_best_val - self.best_value)  # 三者的综合
         obsevation = self._get_obs()
         info = self._get_info()
@@ -76,7 +76,7 @@ class FunctionEnv(gym.Env):
 def main():
     def function(x):
         return np.sum(x**2)
-    env = FunctionEnv(function, 1, [-10, 10])
+    env = FunctionDisEnv(function, 1, [-10, 10])
     observation, info = env.reset()
 
     for i in range(10):
