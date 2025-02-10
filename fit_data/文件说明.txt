@@ -1,0 +1,4 @@
+my_model.keras训练好的模型
+NN_for_DCLSFEL.py训练原文件，不建议直接cv进后续代码，因为固定随机种子以保证效果
+scaler_X/Y.pkl归一化文件，使用方式参考user
+user.py建议cv这一部分，体量小，且对其他代码影响小，当前误差仍然较大
