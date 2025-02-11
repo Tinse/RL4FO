@@ -38,13 +38,19 @@ class FunctionEnv(gym.Env):
     
     def reset(self, seed=None):
         self.current_steps = 0
-        self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
-        self.val = self.function(self.state)
+        while True:
+            self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
+            self.val = self.function(self.state)
+            if self.val != 2.872849464416504:
+                break
+        # self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
+        # self.state = np.array([1.07917519, 0.80312352, -1.18543571, 0.31763992, 1.24870056, 0.75935469, 0.05456781, 0.32651591, 0.89882907, -0.56687066, -0.25786348, -0.74467846])
+        # self.val = self.function(self.state)
         self.best = self.state
         self.best_value = self.function(self.state)
-        obsevation = self._get_obs()
+        observation = self._get_obs()
         info = self._get_info()
-        return obsevation, info
+        return observation, info
     
     def step(self, action):
         self.current_steps += 1
@@ -52,20 +58,23 @@ class FunctionEnv(gym.Env):
         self.last_best_val = self.best_value
         self.state = np.clip(self.state + action * self.step_size ,self.bound[0], self.bound[1])
         self.val = self.function(self.state)
-        if self.val < self.best_value:
+        if self.val > self.best_value:
             self.best = self.state
             self.best_value = self.val
         terminal = False
         # 判断是否结束
         truncated = (self.current_steps >= self.max_steps)  # 直接使用布尔数组比较
-        # reward = -self.val  # 新状态函数值的绝对大小
-        reward = self.last_val - self.val  # 当前动作的改进幅度
-        # reward = self.last_best_val - self.best_value   # 最优值的改进幅度
-        # reward = (self.last_val - self.val) + (-self.val) + (self.last_best_val - self.best_value)  # 三者的综合
-        obsevation = self._get_obs()
+        reward = self.val  # 新状态函数值的绝对大小
+        # reward = self.val - self.last_val  # 当前动作的改进幅度
+        # reward = self.best_value - self.last_best_val    # 最优值的改进幅度
+        # reward = (self.val - self.last_val ) + (self.val) + (self.best_value - self.last_best_val)  # 三者的综合
+        observation = self._get_obs()
         info = self._get_info()
 
-        return obsevation, reward, terminal, truncated, info
+        terminal = (self.current_steps >= self.max_steps)
+        truncated = (self.current_steps >= self.max_steps)
+
+        return observation, reward, terminal, truncated, info
     
     def render(self):
         pass

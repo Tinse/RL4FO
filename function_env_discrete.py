@@ -10,8 +10,8 @@ class FunctionDisEnv(gym.Env):
         self.function = function
         self.dim = dim
         self.bound = bound
-        self.action_space = gym.spaces.Discrete(2)  # 0: -1, 1: 1
-        self.observation_space = gym.spaces.Box(low=bound[0],high=bound[1], shape=(dim,), dtype=np.float32)
+        self.action_space = gym.spaces.MultiDiscrete([2] * dim)  # 每个维度的动作空间为0: -1, 1: 1
+        self.observation_space = gym.spaces.Box(low=bound[0], high=bound[1], shape=(dim,), dtype=np.float32)
         self.step_size = step_size
         self.state = None
         self.last_val = None
@@ -50,7 +50,8 @@ class FunctionDisEnv(gym.Env):
         self.current_steps += 1
         self.last_val = self.val
         self.last_best_val = self.best_value
-        self.state = np.clip(self.state + (action * 2 - 1) * self.step_size ,self.bound[0], self.bound[1])
+        action = np.array(action)  # 将动作转换为numpy数组
+        self.state = np.clip(self.state + (action * 2 - 1) * self.step_size, self.bound[0], self.bound[1])
         self.val = self.function(self.state)
         if self.val < self.best_value:
             self.best = self.state
@@ -62,10 +63,10 @@ class FunctionDisEnv(gym.Env):
         # reward = self.last_val - self.val  # 当前动作的改进幅度
         reward = self.last_best_val - self.best_value   # 最优值的改进幅度
         # reward = (self.last_val - self.val) + (-self.val) + (self.last_best_val - self.best_value)  # 三者的综合
-        obsevation = self._get_obs()
+        observation = self._get_obs()
         info = self._get_info()
 
-        return obsevation, reward, terminal, truncated, info
+        return observation, reward, terminal, truncated, info
     
     def render(self):
         pass
@@ -76,7 +77,7 @@ class FunctionDisEnv(gym.Env):
 def main():
     def function(x):
         return np.sum(x**2)
-    env = FunctionDisEnv(function, 1, [-10, 10])
+    env = FunctionDisEnv(function, 2, [-10, 10])  # 修改为2维输入
     observation, info = env.reset()
 
     for i in range(10):
