@@ -5,10 +5,11 @@ import gymnasium as gym
 from function_env import FunctionEnv
 from stable_baselines3 import PPO
 import numpy as np
+from stable_baselines3.common.callbacks import CheckpointCallback
 
 # 定义目标函数
 def objective(x):
-    return (x)**2
+    return -(x)**2
 
 def ackley_function(x):
     a = 20
@@ -18,7 +19,7 @@ def ackley_function(x):
     part1 = -a * np.exp(-b * np.sqrt(x ** 2))
     part2 = -np.exp(np.cos(c * x))
     result = part1 + part2 + a + np.exp(1)
-    return result
+    return -result
 
 # 创建环境
 env = FunctionEnv(
@@ -30,15 +31,18 @@ env = FunctionEnv(
 )
 
 # 创建PPO模型
-model = PPO("MlpPolicy", env, verbose = 1, device='cpu')
-model.learn(total_timesteps=1000_000)
+model_name = "PPO_03_06_dis"
+checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)
+
+model = PPO("MlpPolicy", env, verbose = 1, tensorboard_log=r'./tensorboard_logs/', device='cpu')
+model.learn(total_timesteps=1000_000, log_interval=1, callback=checkpoint_cb)
 
 # 保存模型
-model.save("ppo_function")
+model.save("./models/ppo_function")
 del model
 
 # 加载模型
-model = PPO.load("ppo_function")
+model = PPO.load("./models/ppo_function")
 
 # 测试模型
 obs, info = env.reset()

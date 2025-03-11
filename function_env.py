@@ -6,7 +6,7 @@ import gymnasium as gym
 import numpy as np
 
 class FunctionEnv(gym.Env):
-    def __init__(self, function, dim, bound, step_size = 1, max_steps=100):
+    def __init__(self, function, dim, bound, step_size = 1, max_steps=100, reset_state=None):
         self.function = function
         self.dim = dim
         self.bound = bound
@@ -21,6 +21,7 @@ class FunctionEnv(gym.Env):
         self.best_value = None
         self.max_steps = max_steps
         self.current_steps = 0
+        self.reset_state = reset_state
         self.reset()
 
 
@@ -38,11 +39,17 @@ class FunctionEnv(gym.Env):
     
     def reset(self, seed=None):
         self.current_steps = 0
-        while True:
+        if self.reset_state is not None:
+            self.state = self.reset_state
+            self.val = self.function(self.state)
+        else:
             self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
             self.val = self.function(self.state)
-            if self.val != 2.872849464416504:
-                break
+        # while True:
+        #     self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
+        #     self.val = self.function(self.state)
+        #     if self.val != 2.872849464416504:
+        #         break
         # self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
         # self.state = np.array([1.07917519, 0.80312352, -1.18543571, 0.31763992, 1.24870056, 0.75935469, 0.05456781, 0.32651591, 0.89882907, -0.56687066, -0.25786348, -0.74467846])
         # self.val = self.function(self.state)
@@ -82,11 +89,17 @@ class FunctionEnv(gym.Env):
     def close(self):
         pass
 
+class Ackley(FunctionEnv):
+    def __init__(self, dim, bound=[-32.768, 32.768], step_size=0.1, max_steps=100, reset_state=None):
+        super().__init__(self.ackley, dim, bound, step_size, max_steps, reset_state)
+        
+
 def main():
     def function(x):
         return np.sum(x**2)
-    env = FunctionEnv(function, 1, [-10, 10])
+    env = FunctionEnv(function, 1, [-10, 10], 0.1, reset_state=np.array([1.07917519]))
     observation, info = env.reset()
+    print(f'Initial state: {observation}, Initial best: {info["best"]}, Initial best_value: {info["best_value"]}, Initial current_steps: {info["current_steps"]}')
 
     for i in range(10):
         action = env.action_space.sample()
@@ -95,6 +108,10 @@ def main():
         print('----------------------------------')
         if terminal or truncated:
             break
+    
+
+    print(f'Final state: {observation}, Final best: {info["best"]}, Final best_value: {info["best_value"]}, Final current_steps: {info["current_steps"]}')
+    
     env.close()
 
 

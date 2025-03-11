@@ -5,8 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 定义目标函数
-def objective(x):
-    return (x)**2
+def sphere(x):
+    return -np.sum(x ** 2)
 
 def ackley_function(x):
     a = 20
@@ -20,14 +20,17 @@ def ackley_function(x):
 
 # 创建环境
 env = FunctionEnv(
-    function=objective,
+    function=sphere,
     dim=1,
+    step_size=0.1,
     bound=[-10, 10],
-    max_steps=20
+    max_steps=100,
+    reset_state=np.array([6.0])
 )
 
 # 加载模型
-model = PPO.load("ppo_function")
+# model = PPO.load("./logs/PPO_03_06_dis_1000000_steps")
+model = PPO.load("./logs/PPO_12dim_sphere_step0.1_140000_steps")
 
 # 测试模型
 obs, info = env.reset()
@@ -38,7 +41,6 @@ while True:
     obs, reward, terminal, truncated, info = env.step(action)
     print(f'state: {obs}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
     print('----------------------------------')
-
     if terminal or truncated:
         break
 print(f'init_obs: {init_obs}, init_val: {init_val}, \nbest: {info["best"]}, best_value: {info["best_value"]}')

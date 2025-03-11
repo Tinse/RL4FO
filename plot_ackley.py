@@ -12,16 +12,21 @@ def ackley_function(x):
     result = part1 + part2 + a + np.exp(1)
     return result
 
-x = np.linspace(-10, 10, 100)
-y = np.linspace(-10, 10, 100)
+x = np.linspace(-10, 10, 1000)
+y = np.linspace(-10, 10, 1000)
 X, Y = np.meshgrid(x, y)
-Z = np.zeros((100, 100))
-for i in range(100):
-    for j in range(100):        
+Z = np.zeros((1000, 1000))
+for i in range(1000):
+    for j in range(1000):        
         Z[i, j] = ackley_function(np.array([X[i, j], Y[i, j]]))
         
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 ax.plot_surface(X, Y, Z)
+ax.set_title('Ackley Function Surface Plot')
+ax.set_xlabel('X axis')
+ax.set_ylabel('Y axis')
+ax.set_zlabel('Z axis')
+plt.title('Ackley Function Surface Plot')
 plt.show()
