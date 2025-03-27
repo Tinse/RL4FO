@@ -4,6 +4,7 @@
 '''
 import gymnasium as gym
 import numpy as np
+from collections import deque
 
 class FunctionEnv(gym.Env):
     def __init__(self, function, dim, bound, step_size = 1, max_steps=100, reset_state=None):
@@ -22,7 +23,10 @@ class FunctionEnv(gym.Env):
         self.max_steps = max_steps
         self.current_steps = 0
         self.reset_state = reset_state
+        self.best_list = deque(maxlen=10)  # 记录最优解的队列
+        self.v = np.random.uniform(0, 0.1, self.dim)  # 初始状态的移动速度，目标是向最优解列表靠近
         self.reset()
+        # print('init')
 
 
     def _get_obs(self):
@@ -45,6 +49,18 @@ class FunctionEnv(gym.Env):
         else:
             self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
             self.val = self.function(self.state)
+        
+        # 每次重置为最优值
+        # if self.best is not None:
+        #     self.state = self.best
+        #     self.val = self.function(self.state)
+        # elif self.reset_state is not None:
+        #     self.state = self.reset_state
+        #     self.val = self.function(self.state)
+        # else:
+        #     self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
+        #     self.val = self.function(self.state)
+
         # while True:
         #     self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
         #     self.val = self.function(self.state)
@@ -55,6 +71,8 @@ class FunctionEnv(gym.Env):
         # self.val = self.function(self.state)
         self.best = self.state
         self.best_value = self.function(self.state)
+        # if len(self.best_list) == 0:
+        #     self.best_list.append((self.best, self.best_value))
         observation = self._get_obs()
         info = self._get_info()
         return observation, info
@@ -63,16 +81,19 @@ class FunctionEnv(gym.Env):
         self.current_steps += 1
         self.last_val = self.val
         self.last_best_val = self.best_value
-        self.state = np.clip(self.state + action * self.step_size ,self.bound[0], self.bound[1])
+        self.state = np.clip(self.state + action * self.step_size, self.bound[0], self.bound[1])
         self.val = self.function(self.state)
+        # if self.val > self.best_list[-1][1]:
         if self.val > self.best_value:
             self.best = self.state
             self.best_value = self.val
+            print(f'best: {self.best}, best_value: {self.best_value}')
+            # self.best_list.append((self.best, self.best_value))  # 记录最优解
         terminal = False
         # 判断是否结束
         truncated = (self.current_steps >= self.max_steps)  # 直接使用布尔数组比较
         reward = self.val  # 新状态函数值的绝对大小
-        # reward = self.val - self.last_val  # 当前动作的改进幅度
+        # reward = self.val - self.last_val  # 当前动作的改进幅度·
         # reward = self.best_value - self.last_best_val    # 最优值的改进幅度
         # reward = (self.val - self.last_val ) + (self.val) + (self.best_value - self.last_best_val)  # 三者的综合
         observation = self._get_obs()

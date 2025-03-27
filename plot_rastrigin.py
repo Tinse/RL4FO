@@ -1,6 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# 定义目标函数
+def sphere(x):
+    return -np.sum(x ** 2)
+
+def ackley(x):
+    a = 20
+    b = 0.2
+    c = 2 * np.pi
+    d = len(x)  # 获取维度
+    # 使用 numpy 的向量化操作，对 x 中的每个元素进行计算
+    part1 = -a * np.exp(-b * np.sqrt(np.sum(x ** 2) / d))
+    part2 = -np.exp(np.sum(np.cos(c * x)) / d)
+    result = part1 + part2 + a + np.exp(1)
+    return -result
+
 def rastrigin(x):
     """
     Rastrigin函数实现，支持任意维度
@@ -12,6 +27,33 @@ def rastrigin(x):
     n = len(x)
     result = A * n + np.sum(x**2 - A * np.cos(2 * np.pi * x))
     return result
+
+def griewank(x):
+    """
+    Griewank函数实现，支持任意维度
+    
+    f(x) = 1 + (1/4000) * sum(x_i^2) - prod(cos(x_i/sqrt(i+1)))
+    
+    特点：
+    - 有无数个规则分布的局部极小值点
+    - 全局最小值在 f(0,...,0) = 0
+    - 典型搜索空间: x_i ∈ [-600, 600]
+
+    """
+    # 计算第一部分: sum(x_i^2)/4000
+    sum_part = np.sum(x**2) / 4000
+    
+    # 计算第二部分: prod(cos(x_i/sqrt(i)))
+    # 注意：numpy的索引从0开始，而Griewank函数定义中i从1开始
+    indices = np.arange(1, len(x) + 1)
+    prod_part = np.prod(np.cos(x / np.sqrt(indices)))
+    
+    # 计算Griewank函数值
+    result = 1 + sum_part - prod_part
+
+    result = np.clip(result, -1e6, 1e6)
+    # 返回负值（因为RL是最大化奖励）
+    return -result
 
 def levy(x):
     """

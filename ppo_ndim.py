@@ -56,7 +56,8 @@ def griewank(x):
     
     # 计算Griewank函数值
     result = 1 + sum_part - prod_part
-    
+
+    result = np.clip(result, -1e6, 1e6)
     # 返回负值（因为RL是最大化奖励）
     return -result
 
@@ -89,18 +90,19 @@ def levy(x):
 env = FunctionEnv(
     function=levy,
     dim=12,
-    step_size=0.2,
+    step_size=0.1,
     bound=[-10, 10],
-    max_steps=100,
-    reset_state=np.array([-7.0]*12)
+    max_steps=1000,
+    reset_state=np.array([-7]*12)
 )
 
 # 创建PPO模型
-model_name = "PPO_12dim_levy_step02_max100_mixreward"
+model_name = "PPO_12dim_levy_step01_max1000_ba_reward3"
 checkpoint_cb = CheckpointCallback(save_freq=100_000, save_path='./logs/', name_prefix=model_name)
 
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=r'./tensorboard_logs/', device='cpu', ent_coef=0.05, learning_rate=1e-4)
-model.learn(total_timesteps=10_000_000, log_interval=1, callback=checkpoint_cb)
+
+model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=r'./tensorboard_logs/', device='cpu', learning_rate=1e-3, n_steps=1000, batch_size=10)
+model.learn(total_timesteps=100_000_000, log_interval=1, callback=checkpoint_cb)
 
 # 保存模型
 model.save(f"./models/{model_name}")

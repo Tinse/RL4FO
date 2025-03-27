@@ -87,60 +87,63 @@ def levy(x):
 env = FunctionEnv(
     function=levy,
     dim=12,
-    step_size=1,
+    step_size=0.1,
     bound=[-10, 10],
-    max_steps=100,
-    reset_state=np.array([-7.0]*12)
+    max_steps=1000,
+    reset_state=np.array([-7]*12)
 )
 
 # 加载模型
 # model = PPO.load("./models/PPO_12dim_ackley_step0.1")
-model = PPO.load("./logs/PPO_12dim_levy_step10_max100_mixreward_10000000_steps")
+model = PPO.load("./logs/PPO_12dim_sphere_step01_max1000_ba_reward2_15100000_steps")
 
 # 测试模型
+info_list = []
+step_list = []
+count = 0
+
 obs, info = env.reset()
 init_obs = obs
-init_val = info['value']
-while True:
-    action, _states = model.predict(obs, deterministic=True)
-    # action, _states = model.predict(obs, deterministic=False)
-    obs, reward, terminal, truncated, info = env.step(action)
-    print(f'state: {obs}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
-    print('----------------------------------')
+init_val = info["value"]
 
+while True:
+    # action, _states = model.predict(obs)
+    action, _states = model.predict(obs, deterministic=True)
+    obs, reward, terminal, truncated, info = env.step(action)
+    info_list.append(info)
+    print(
+        f'state: {obs}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}'
+    )
+    print("----------------------------------")
     if terminal or truncated:
         break
-print(f'init_obs: {init_obs}, init_val: {init_val}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
+
+steps, val = zip(*[(step["current_steps"], step["value"]) for step in info_list])
+plt.plot(steps, val)
+plt.xlabel("Step")
+plt.ylabel("Value")
+plt.title("Value per Step")
+plt.show()
+
+print(
+    f'init_obs: {init_obs}, init_val: {init_val}, \nfinal_state: {obs}, final_val: {info["value"]}, \nbest: {info["best"]}, best_value: {info["best_value"]}'
+)
 env.close()
 
-# # 创建网格点
-# num = 20
-# x = np.linspace(-10, 10, num)
-# y = np.linspace(-10, 10, num)
-# X, Y = np.meshgrid(x, y)
 
-# # 计算每个网格点的动作值
-# Z = np.zeros((num, num))
-# for i in range(num):
-#     for j in range(num):
-#         state = [X[i,j], Y[i,j]]
-#         action, _ = model.predict(state, deterministic=True)
-#         Z[i,j] = action[0]  # 假设动作是标量
 
-# # 创建3D图
-# fig = plt.figure(figsize=(10, 8))
-# ax = fig.add_subplot(111, projection='3d')
 
-# # 绘制曲面
-# surface = ax.plot_surface(X, Y, Z, cmap='viridis')
+# obs, info = env.reset()
+# init_obs = obs
+# init_val = info['value']
+# while True:
+#     action, _states = model.predict(obs, deterministic=True)
+#     # action, _states = model.predict(obs, deterministic=False)
+#     obs, reward, terminal, truncated, info = env.step(action)
+#     print(f'state: {obs}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
+#     print('----------------------------------')
 
-# # 添加颜色条
-# fig.colorbar(surface)
-
-# # 设置标签
-# ax.set_xlabel('X')
-# ax.set_ylabel('Y')
-# ax.set_zlabel('Action')
-# ax.set_title('State-Action Surface')
-
-# plt.show()
+#     if terminal or truncated:
+#         break
+# print(f'init_obs: {init_obs}, init_val: {init_val}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
+# env.close()
