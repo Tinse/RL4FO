@@ -7,13 +7,15 @@ import numpy as np
 from collections import deque
 
 class FunctionDisEnv(gym.Env):
-    def __init__(self, function, dim, bound, step_size = 0.1, max_steps=100, reset_state=None, action_dim=1):
+    def __init__(self, function, dim, bound, step_size = 0.1, max_steps=100, reset_state=None, action_dim=1, failure_times_max=6, is_eval = False, eval_steps=100):
         self.function = function
         self.dim = dim
         self.action_dim = action_dim
         self.bound = bound
         self.action_space = gym.spaces.MultiDiscrete([2] * self.action_dim)  # 每个维度的动作空间为0代表-1, 1代表+1
         self.observation_space = gym.spaces.Box(low=bound[0], high=bound[1], shape=(dim,), dtype=np.float32)
+        self.is_eval = is_eval
+        self.eval_steps = eval_steps
         self.step_size = step_size
         self.state = None
         self.last_val = None
@@ -21,7 +23,8 @@ class FunctionDisEnv(gym.Env):
         self.best = None
         self.last_best_val = None
         self.best_value = None
-        self.max_steps = max_steps
+        self.max_steps = 1  # 当前最大步数
+        self.max_steps_explore = max_steps  # 跳出局部最优解的探索步数
         self.current_steps = 0
         assert reset_state is None or len(reset_state) == dim
         self.reset_state = reset_state
@@ -29,6 +32,8 @@ class FunctionDisEnv(gym.Env):
         self.best_list = deque(maxlen=10)  # 记录最优解的队列
         self.v = np.random.uniform(0, 0.1, self.dim)  # 初始状态的移动速度，目标是向最优解列表靠近
         self.select = None
+        self.failure_times = 0  # 当前失败次数
+        self.failure_times_max = failure_times_max  # 最大失败步数
         self.reset()
 
 
@@ -68,8 +73,8 @@ class FunctionDisEnv(gym.Env):
         return observation, info
     
     def step(self, action):
-        truncated = False
-        terminal = False
+        truncated = False  # 是否改进而结束
+        terminal = False  # 是否达到最大步数而中止
 
         self.current_steps += 1
         self.last_val = self.val
@@ -83,13 +88,24 @@ class FunctionDisEnv(gym.Env):
             self.reset_state = self.best.copy()
             print(f'+++++++++++++  best: {self.best}, best_value: {self.best_value}')
             terminal = True  # 立即结束,以免剩下的步数不足以跳出局部最优解,造成浪费
+            self.max_steps = 1  # 设置最大步数为1,以便立即结束
+            self.failure_times = 0  # 重置失败次数
             
         # terminal = False
         # 判断是否结束
         truncated = (self.current_steps >= self.max_steps)  # 直接使用布尔数组比较
-        if truncated: # 如果达到最大步数,判断是否找到更优的解
-            if self.best_value == self.reset_val: # 如果没有找到更优的解，则继续查找
-                truncated = False
+        if not terminal and truncated:  # 如果没有改进，且达到最大步数，则失败次数加1
+            self.failure_times += 1
+        if self.failure_times >= self.failure_times_max:  # 如果达到最大失败次数,则修改认为是局部最优解
+            print(f'failure! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.val}')
+            self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
+            # if self.max_steps >= self.max_steps_explore:  # 如果当前最大步数小于探索步数，则增加最大步数
+            #     self.max_steps *= 2  # 最大步数翻倍
+            self.failure_times = 0
+
+        # if truncated: # 如果达到最大步数,判断是否找到更优的解
+        #     if self.best_value == self.reset_val: # 如果没有找到更优的解，则继续查找
+        #         truncated = False
 
         # 计算奖励
         reward = self.val  # 新状态函数值的绝对大小
@@ -99,7 +115,11 @@ class FunctionDisEnv(gym.Env):
         # reward = (self.last_val - self.val) + (-self.val) + (self.best_value - self.last_best_val)  # 三者的综合
         observation = self._get_obs()
         info = self._get_info()
-
+        
+        if self.is_eval:
+            terminal = False
+            truncated = False
+            terminal = (self.current_steps >= self.eval_steps)  # 直接使用布尔数组比较
         return observation, reward, terminal, truncated, info
     
     def render(self):
@@ -119,11 +139,12 @@ def main():
         bound=[-10, 10],
         max_steps=100,
         reset_state=np.array([-7]*12, dtype=np.float32),
-        action_dim = 12
+        action_dim = 12,
+        is_eval = True
     )
     observation, info = env.reset()
 
-    for i in range(10):
+    for i in range(100):
         action = env.action_space.sample()
         observation, reward, terminal, truncated, info = env.step(action)
         print(f'state: {observation}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
