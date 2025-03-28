@@ -25,6 +25,7 @@ class FunctionDisEnv(gym.Env):
         self.current_steps = 0
         assert reset_state is None or len(reset_state) == dim
         self.reset_state = reset_state
+        self.reset_val = None
         self.best_list = deque(maxlen=10)  # 记录最优解的队列
         self.v = np.random.uniform(0, 0.1, self.dim)  # 初始状态的移动速度，目标是向最优解列表靠近
         self.select = None
@@ -59,7 +60,7 @@ class FunctionDisEnv(gym.Env):
 
         print(f'reset: {self.state}, val: {self.val}')
 
-
+        self.reset_val = self.val
         self.best = self.state.copy()
         self.best_value = self.function(self.state)
         observation = self._get_obs()
@@ -67,6 +68,9 @@ class FunctionDisEnv(gym.Env):
         return observation, info
     
     def step(self, action):
+        truncated = False
+        terminal = False
+
         self.current_steps += 1
         self.last_val = self.val
         self.last_best_val = self.best_value
@@ -78,9 +82,16 @@ class FunctionDisEnv(gym.Env):
             self.best_value = self.val
             self.reset_state = self.best.copy()
             print(f'+++++++++++++  best: {self.best}, best_value: {self.best_value}')
-        terminal = False
+            terminal = True  # 立即结束,以免剩下的步数不足以跳出局部最优解,造成浪费
+            
+        # terminal = False
         # 判断是否结束
         truncated = (self.current_steps >= self.max_steps)  # 直接使用布尔数组比较
+        if truncated: # 如果达到最大步数,判断是否找到更优的解
+            if self.best_value == self.reset_val: # 如果没有找到更优的解，则继续查找
+                truncated = False
+
+        # 计算奖励
         reward = self.val  # 新状态函数值的绝对大小
         # reward = self.val - self.last_val   # 当前动作的改进幅度
         # reward = self.best_value - self.last_best_val   # 最优值的改进幅度

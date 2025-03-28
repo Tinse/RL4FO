@@ -39,10 +39,35 @@ def levy(x):
     # 返回负值（因为RL是最大化奖励）
     return -result
 
+def levy_1d(x,input=None):
+    x = np.array(x)  # 添加这行来转换输入
+    if input is None:
+        input = np.array([-7.0]*12, dtype=float)  # 初始化为1维数组，默认值为-7.0
+
+    # input = np.random.uniform(-10, 10, 12)  # 随机生成12个元素
+
+    input[0] = x  # 只修改第一个元素
+
+    w = 1.0 + (input - 1.0) / 4.0
+    
+    term1 = np.sin(np.pi * w[0]) ** 2
+    
+    term2 = np.sum((w[:-1] - 1.0) ** 2 * (1.0 + 10.0 * np.sin(np.pi * w[1:]) ** 2))
+    
+    term3 = (w[-1] - 1.0) ** 2 * (1.0 + np.sin(2.0 * np.pi * w[-1]) ** 2)
+    
+    result = term1 + term2 + term3
+    
+    # 返回负值（因为RL是最大化奖励）
+    return -result
+    
+
 
 
 # 定义绘图函数
-def plot_1dim(func, x_min, x_max, num_points=1000):
+def plot_1dim(func, x_min, x_max, num_points=100):
+    input = np.random.uniform(-10, 10, 12)
+    print(input)
     x = np.linspace(x_min, x_max, num_points)
     y = np.array([func([xi]) for xi in x])
     
@@ -54,4 +79,4 @@ def plot_1dim(func, x_min, x_max, num_points=1000):
     plt.show()
 
 # 绘制Ackley函数
-plot_1dim(levy, -4, -2)
+plot_1dim(levy_1d, -10, 10)

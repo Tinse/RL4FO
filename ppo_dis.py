@@ -73,6 +73,7 @@ def levy(x):
     - 全局最小值在 f(1,...,1) = 0
     - 典型搜索空间: xᵢ ∈ [-10, 10]
     """
+    x = np.array(x, dtype=float)  # 添加这行来转换输入
     w = 1.0 + (x - 1.0) / 4.0
     
     term1 = np.sin(np.pi * w[0]) ** 2
@@ -92,7 +93,7 @@ env = FunctionDisEnv(
     dim=12,
     step_size=0.01,
     bound=[-10, 10],
-    max_steps=1000,
+    max_steps=1,
     reset_state=np.array([-7.0]*12, dtype=np.float32),
     action_dim = 1
 )
