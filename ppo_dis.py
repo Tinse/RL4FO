@@ -89,18 +89,19 @@ def levy(x):
 
 # 创建环境
 env = FunctionDisEnv(
-    function=levy,
+    function=sphere,
     dim=12,
-    step_size=0.01,
+    step_size=0.1,
     bound=[-10, 10],
-    max_steps=1,
+    max_steps_explore=1000,
     reset_state=np.array([-7.0]*12, dtype=np.float32),
-    action_dim = 1
+    action_dim = 12,
+    failure_times_max=6
 )
 
 # 创建PPO模型
 # model_name = "PPO_dis_12dim_levy_step01_max100000_reward_4670000_steps" 
-model_name = "0327PPO_dis_1dim_levy_step01_max100000_reward_reset" 
+model_name = "0328PPO_dis_12dim_sphere_step01_max100000_reward_reset_failure" 
 # 加载模型
 # model = PPO.load(f"./logs/{model_name}", learning_rate=1e-4, env=env)
 checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)

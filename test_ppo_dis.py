@@ -86,17 +86,18 @@ def levy(x):
 env = FunctionDisEnv(
     function=levy,
     dim=12,
-    step_size=0.1,
+    step_size=0.01,
     bound=[-10, 10],
-    max_steps=300,
-    # reset_state=np.array([-10.0]*12, dtype=np.float32),
+    # reset_state=np.array([-7.0]*12, dtype=np.float32),
     reset_state=np.random.uniform(-10, 10, 12),
-    action_dim = 12
+    action_dim = 12,
+    is_eval=True,
+    eval_steps=2000
 )
  
 # 加载模型
 # model = PPO.load("./models/PPO_12dim_ackley_step0.1")
-model = PPO.load("./logs/PPO_dis_1dim_levy_step01_max100000_reward_reset_680000_steps")
+model = PPO.load("./logs/0328PPO_dis_12dim_sphere_step01_max100000_reward_reset_failure_200000_steps")
 
 # 测试模型
 info_list = []
@@ -108,8 +109,8 @@ init_obs = obs
 init_val = info["value"]
 
 while True:
-    action, _states = model.predict(obs)
-    # action, _states = model.predict(obs, deterministic=True)
+    # action, _states = model.predict(obs)
+    action, _states = model.predict(obs, deterministic=True)
     obs, reward, terminal, truncated, info = env.step(action)
     info_list.append(info)
     print(
@@ -124,12 +125,13 @@ plt.plot(steps, val)
 plt.xlabel("Step")
 plt.ylabel("Value")
 plt.title("Value per Step")
-plt.show()
+
 
 print(
     f'init_obs: {init_obs}, init_val: {init_val}, \nfinal_state: {obs}, final_val: {info["value"]}, \nbest: {info["best"]}, best_value: {info["best_value"]}'
 )
 env.close()
+plt.show()
 
 
 

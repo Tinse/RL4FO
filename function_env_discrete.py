@@ -7,7 +7,7 @@ import numpy as np
 from collections import deque
 
 class FunctionDisEnv(gym.Env):
-    def __init__(self, function, dim, bound, step_size = 0.1, max_steps=100, reset_state=None, action_dim=1, failure_times_max=6, is_eval = False, eval_steps=100):
+    def __init__(self, function, dim, bound, step_size = 0.1, max_steps_explore=100, reset_state=None, action_dim=1, failure_times_max=6, is_eval = False, eval_steps=100):
         self.function = function
         self.dim = dim
         self.action_dim = action_dim
@@ -24,7 +24,7 @@ class FunctionDisEnv(gym.Env):
         self.last_best_val = None
         self.best_value = None
         self.max_steps = 1  # 当前最大步数
-        self.max_steps_explore = max_steps  # 跳出局部最优解的探索步数
+        self.max_steps_explore = max_steps_explore  # 跳出局部最优解的探索步数
         self.current_steps = 0
         assert reset_state is None or len(reset_state) == dim
         self.reset_state = reset_state
@@ -63,7 +63,7 @@ class FunctionDisEnv(gym.Env):
         # self.state = np.random.uniform(self.bound[0], self.bound[1], self.dim)
         # self.val = self.function(self.state)
 
-        print(f'reset: {self.state}, val: {self.val}')
+        # print(f'reset: {self.state}, val: {self.val}')
 
         self.reset_val = self.val
         self.best = self.state.copy()
@@ -86,6 +86,7 @@ class FunctionDisEnv(gym.Env):
             self.best = self.state.copy()
             self.best_value = self.val
             self.reset_state = self.best.copy()
+            self.reset_val = self.val
             print(f'+++++++++++++  best: {self.best}, best_value: {self.best_value}')
             terminal = True  # 立即结束,以免剩下的步数不足以跳出局部最优解,造成浪费
             self.max_steps = 1  # 设置最大步数为1,以便立即结束
@@ -97,7 +98,7 @@ class FunctionDisEnv(gym.Env):
         if not terminal and truncated:  # 如果没有改进，且达到最大步数，则失败次数加1
             self.failure_times += 1
         if self.failure_times >= self.failure_times_max:  # 如果达到最大失败次数,则修改认为是局部最优解
-            print(f'failure! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.val}')
+            print(f'failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
             self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
             # if self.max_steps >= self.max_steps_explore:  # 如果当前最大步数小于探索步数，则增加最大步数
             #     self.max_steps *= 2  # 最大步数翻倍
