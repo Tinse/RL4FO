@@ -91,6 +91,7 @@ class FunctionDisEnv(gym.Env):
             terminal = True  # 立即结束,以免剩下的步数不足以跳出局部最优解,造成浪费
             self.max_steps = 1  # 设置最大步数为1,以便立即结束
             self.failure_times = 0  # 重置失败次数
+            # self.is_eval = False  # 重置评估状态
             
         # terminal = False
         # 判断是否结束
@@ -99,9 +100,11 @@ class FunctionDisEnv(gym.Env):
             self.failure_times += 1
         if self.failure_times >= self.failure_times_max:  # 如果达到最大失败次数,则修改认为是局部最优解
             print(f'failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
-            self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
-            # if self.max_steps >= self.max_steps_explore:  # 如果当前最大步数小于探索步数，则增加最大步数
-            #     self.max_steps *= 2  # 最大步数翻倍
+            if self.max_steps >= self.max_steps_explore:  # 如果当前最大步数小于探索步数，则增加最大步数
+                self.max_steps *= 1.1  # 最大步数翻倍
+                print(f"### new max_steps: {self.max_steps}")
+            else:   
+                self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
             self.failure_times = 0
 
         # if truncated: # 如果达到最大步数,判断是否找到更优的解
@@ -138,7 +141,7 @@ def main():
         dim=12,
         step_size=0.1,
         bound=[-10, 10],
-        max_steps=100,
+        max_steps_explore=100,
         reset_state=np.array([-7]*12, dtype=np.float32),
         action_dim = 12,
         is_eval = True
