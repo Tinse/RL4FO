@@ -1,2 +1,4 @@
 # 屏蔽 logs 文件夹
 logs/
+# 屏蔽 __pycache__ 文件夹
+__pycache__/

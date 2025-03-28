@@ -28,6 +28,11 @@ def rastrigin(x):
     
     f(x) = A*n + sum(x_i^2 - A*cos(2π*x_i))
     其中A=10, n是维度数
+
+    取值范围: [-5.12, 5.12]
+    最小值在f(0,...,0) = 0
+    最大值在f(±4.52299366, ±4.52299366, ±4.52299366, ±4.52299366) = 40.35329019*n
+    12维度时，最大值为484.2394823
     """
     A = 10
     n = len(x)
@@ -89,19 +94,19 @@ def levy(x):
 
 # 创建环境
 env = FunctionDisEnv(
-    function=sphere,
+    function=griewank,
     dim=12,
-    step_size=0.1,
-    bound=[-10, 10],
-    max_steps_explore=1000,
-    reset_state=np.array([-7.0]*12, dtype=np.float32),
-    action_dim = 12,
-    failure_times_max=6
+    step_size=2,
+    bound=[-600, 600],
+    max_steps_explore=5,
+    reset_state=np.array([-400.0]*12, dtype=np.float32),
+    action_dim = 8,
+    failure_times_max1=10000,  # 局部最优解最大失败次数
+    failure_times_max2=3,  # 探索模式最大失败次数
 )
 
 # 创建PPO模型
-# model_name = "PPO_dis_12dim_levy_step01_max100000_reward_4670000_steps" 
-model_name = "0328PPO_dis_12dim_sphere_step01_max100000_reward_reset_failure" 
+model_name = "0328PPO_dis_12dim_griewank_step01_max100000_reward_reset_failure"
 # 加载模型
 # model = PPO.load(f"./logs/{model_name}", learning_rate=1e-4, env=env)
 checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)

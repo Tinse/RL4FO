@@ -84,35 +84,20 @@ def levy(x):
 
 # 创建环境
 env = FunctionDisEnv(
-<<<<<<< HEAD
-    function=sphere,
-    dim=12,
-    step_size=0.1,
-    bound=[-10, 10],
-=======
     function=rastrigin,
     dim=12,
     step_size=0.1,
     bound=[-5.12, 5.12],
->>>>>>> 0e8c93a795315437c93c3a5dff3dfbd661688a97
     # reset_state=np.array([-7.0]*12, dtype=np.float32),
     reset_state=np.random.uniform(-5, 5, 12),
     action_dim = 6,
     is_eval=True,
-<<<<<<< HEAD
-    eval_steps=1000
-=======
     eval_steps=300
->>>>>>> 0e8c93a795315437c93c3a5dff3dfbd661688a97
 )
  
 # 加载模型
 # model = PPO.load("./models/PPO_12dim_ackley_step0.1")
-<<<<<<< HEAD
-model = PPO.load("./logs/0328PPO_dis_12dim_sphere_step01_max100000_reward_reset_failure_300000_steps")
-=======
 model = PPO.load("./logs/0328PPO_dis_12dim_rastrigin_step01_max100000_reward_reset_failure_3510000_steps")
->>>>>>> 0e8c93a795315437c93c3a5dff3dfbd661688a97
 
 # 测试模型
 info_list = []

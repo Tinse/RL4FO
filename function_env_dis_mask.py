@@ -6,14 +6,13 @@ import gymnasium as gym
 import numpy as np
 from collections import deque
 
-class FunctionDisEnv(gym.Env):
+class FunctionDisMaskEnv(gym.Env):
     def __init__(self, function, dim, bound, step_size = 0.1, max_steps_explore=100, reset_state=None, action_dim=1, failure_times_max1=1000, failure_times_max2=5, is_eval = False, eval_steps=100):
         self.function = function
         self.dim = dim
         self.action_dim = action_dim
         self.bound = bound
-        self.action_space = gym.spaces.MultiDiscrete([2] * self.action_dim)  # 每个维度的动作空间为0代表-1, 1代表+1
-        # self.action_space = gym.spaces.MultiDiscrete([3] * self.action_dim)  # 每个维度的动作空间为0代表-1, 1代表0, 2代表+1
+        self.action_space = gym.spaces.MultiDiscrete([2, self.action_dim])  # 第一个维度的动作空间为0代表-1, 1代表+1, 第二个维度的动作空间为0到dim-1，表示选择哪个维度进行操作
         self.observation_space = gym.spaces.Box(low=bound[0], high=bound[1], shape=(dim,), dtype=np.float32)
         self.is_eval = is_eval
         self.eval_steps = eval_steps
@@ -83,7 +82,7 @@ class FunctionDisEnv(gym.Env):
         self.last_val = self.val
         self.last_best_val = self.best_value
         action = np.array(action)  # 将动作转换为numpy数组
-        self.state[0:self.action_dim] = np.clip(self.state[0:self.action_dim] + (action * 2 - 1) * self.step_size, self.bound[0], self.bound[1])
+        self.state[action[1]] = np.clip(self.state[action[1]] + (action[0] * 2 - 1) * self.step_size, self.bound[0], self.bound[1])
         # self.state[0:self.action_dim] = np.clip(self.state[0:self.action_dim] + (action - 1) * self.step_size, self.bound[0], self.bound[1])
         self.val = self.function(self.state)
         if self.val > self.best_value:
@@ -95,11 +94,7 @@ class FunctionDisEnv(gym.Env):
             terminal = True  # 立即结束,以免剩下的步数不足以跳出局部最优解,造成浪费
             self.max_steps = 1.0  # 设置最大步数为1,以便立即结束
             self.failure_times = 0  # 重置失败次数
-<<<<<<< HEAD
-            # self.is_eval = False  # 重置评估状态
-=======
             self.explore_mode = False  # 重置探索模式
->>>>>>> 0e8c93a795315437c93c3a5dff3dfbd661688a97
             
         # terminal = False
         # 判断是否结束
@@ -108,22 +103,15 @@ class FunctionDisEnv(gym.Env):
             self.failure_times += 1
         if self.explore_mode:  # 如果处于探索模式，则失败次数加1
             if (self.failure_times >= self.failure_times_max2) :  # 如果达到最大失败次数, 增加最大步数
-                print(f'failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
-                # self.max_steps *= 1.05  # 最大步数增加
-                # self.max_steps = min(self.max_steps, self.max_steps_explore * 100)  # 最大步数不超过探索步数的100倍    
+                print(f'2nd failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
+                # self.max_steps *= 1.1  # 最大步数增加
+                # # print(f'self.max_steps:{self.max_steps}')
+                # self.max_steps = min(self.max_steps, self.max_steps_explore * 1000)  # 最大步数不超过探索步数的1000倍    
                 self.failure_times = 0   
         elif (self.failure_times >= self.failure_times_max1) :  # 如果不是探索模式，且达到最大失败次数,则修改认为是局部最优解
-            print(f'failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
-<<<<<<< HEAD
-            if self.max_steps >= self.max_steps_explore:  # 如果当前最大步数小于探索步数，则增加最大步数
-                self.max_steps *= 1.1  # 最大步数翻倍
-                print(f"### new max_steps: {self.max_steps}")
-            else:   
-                self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
-=======
+            print(f'1st failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
             self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
             self.explore_mode = True  # 进入探索模式
->>>>>>> 0e8c93a795315437c93c3a5dff3dfbd661688a97
             self.failure_times = 0
 
         # if truncated: # 如果达到最大步数,判断是否找到更优的解
@@ -155,10 +143,10 @@ def main():
     def function(x):
         return np.sum(x**2)
     # 创建环境
-    env = FunctionDisEnv(
+    env = FunctionDisMaskEnv(
         function=function,
         dim=12,
-        step_size=0.1,
+        step_size=1,
         bound=[-10, 10],
         max_steps_explore=100,
         reset_state=np.array([-7]*12, dtype=np.float32),
@@ -166,12 +154,13 @@ def main():
         is_eval = True
     )
     observation, info = env.reset()
-
+    action = env.action_space.sample()
+    observation, reward, terminal, truncated, info = env.step(action)
     for i in range(100):
         action = env.action_space.sample()
-        observation, reward, terminal, truncated, info = env.step(action)
         print(f'state: {observation}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
         print('----------------------------------')
+        observation, reward, terminal, truncated, info = env.step(action)
         if terminal or truncated:
             break
     env.close()

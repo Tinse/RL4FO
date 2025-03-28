@@ -22,6 +22,7 @@ def rastrigin(x):
     
     f(x) = A*n + sum(x_i^2 - A*cos(2π*x_i))
     其中A=10, n是维度数
+    
     """
     A = 10
     n = len(x)
