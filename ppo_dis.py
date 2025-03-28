@@ -28,11 +28,13 @@ def rastrigin(x):
     
     f(x) = A*n + sum(x_i^2 - A*cos(2π*x_i))
     其中A=10, n是维度数
+
+    最优值在f(0,...,0) = 0
     """
     A = 10
     n = len(x)
     result = A * n + np.sum(x**2 - A * np.cos(2 * np.pi * x))
-    return result
+    return -result
 
 def griewank(x):
     """
@@ -89,7 +91,7 @@ def levy(x):
 
 # 创建环境
 env = FunctionDisEnv(
-    function=sphere,
+    function=rastrigin,
     dim=12,
     step_size=0.1,
     bound=[-10, 10],
@@ -100,8 +102,7 @@ env = FunctionDisEnv(
 )
 
 # 创建PPO模型
-# model_name = "PPO_dis_12dim_levy_step01_max100000_reward_4670000_steps" 
-model_name = "0328PPO_dis_12dim_sphere_step01_max100000_reward_reset_failure" 
+model_name = "0328PPO_dis_12dim_rastrigin_step01_max100000_reward_reset_failure"
 # 加载模型
 # model = PPO.load(f"./logs/{model_name}", learning_rate=1e-4, env=env)
 checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)
