@@ -1,13 +1,12 @@
 '''
-一个适用于单目标优化问题的强化学习环境
-基于
+一个适用于单目标优化问题的强化学习环境，离散动作，技巧变步长
 '''
 import gymnasium as gym
 import numpy as np
 from collections import deque
 
-class FunctionDisEnv(gym.Env):
-    def __init__(self, function, dim, bound, step_size = 0.1, max_steps_explore=100, reset_state=None, action_dim=1, failure_times_max1=1000, failure_times_max2=5, is_eval = False, eval_steps=100):
+class FunctionDisStepEnv(gym.Env):
+    def __init__(self, function, dim, bound, step_size = 0.1, max_steps_explore=100, reset_state=None, action_dim=1, failure_times_max1=1000, failure_times_max2=5, is_eval = False, eval_steps=100, step_size_max=1):
         self.function = function
         self.dim = dim
         self.action_dim = action_dim
@@ -18,6 +17,7 @@ class FunctionDisEnv(gym.Env):
         self.is_eval = is_eval
         self.eval_steps = eval_steps
         self.step_size = step_size
+        self.step_size_max = step_size_max  # 最大步长
         self.state = None
         self.last_val = None
         self.val = None
@@ -110,7 +110,8 @@ class FunctionDisEnv(gym.Env):
                 self.failure_times = 0   
         elif (self.failure_times >= self.failure_times_max1) :  # 如果不是探索模式，且达到最大失败次数,则修改认为是局部最优解
             print(f'failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
-            self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
+            # self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
+            self.step_size = self.step_size_max  # 设置步长为最大步长
             self.explore_mode = True  # 进入探索模式
             self.failure_times = 0
 
@@ -143,7 +144,7 @@ def main():
     def function(x):
         return np.sum(x**2)
     # 创建环境
-    env = FunctionDisEnv(
+    env = FunctionDisStepEnv(
         function=function,
         dim=12,
         step_size=0.1,

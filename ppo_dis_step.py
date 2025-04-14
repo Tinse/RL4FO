@@ -1,8 +1,11 @@
+'''
+使用stable-baselines3库中的PPO算法训练模型，解决function optimization问题
+'''
 import gymnasium as gym
-from function_env_discrete import FunctionDisEnv
+from function_env_dis_step import FunctionDisStepEnv
 from stable_baselines3 import PPO
 import numpy as np
-import matplotlib.pyplot as plt
+from stable_baselines3.common.callbacks import CheckpointCallback
 
 # 定义目标函数
 def sphere(x):
@@ -25,6 +28,11 @@ def rastrigin(x):
     
     f(x) = A*n + sum(x_i^2 - A*cos(2π*x_i))
     其中A=10, n是维度数
+
+    取值范围: [-5.12, 5.12]
+    最小值在f(0,...,0) = 0
+    最大值在f(±4.52299366, ±4.52299366, ±4.52299366, ±4.52299366) = 40.35329019*n
+    12维度时，最大值为484.2394823
     """
     A = 10
     n = len(x)
@@ -53,7 +61,8 @@ def griewank(x):
     
     # 计算Griewank函数值
     result = 1 + sum_part - prod_part
-    
+
+    result = np.clip(result, -1e6, 1e6)
     # 返回负值（因为RL是最大化奖励）
     return -result
 
@@ -69,6 +78,7 @@ def levy(x):
     - 全局最小值在 f(1,...,1) = 0
     - 典型搜索空间: xᵢ ∈ [-10, 10]
     """
+    x = np.array(x, dtype=float)  # 添加这行来转换输入
     w = 1.0 + (x - 1.0) / 4.0
     
     term1 = np.sin(np.pi * w[0]) ** 2
@@ -83,70 +93,47 @@ def levy(x):
     return -result
 
 # 创建环境
-env = FunctionDisEnv(
-    function=rastrigin,
-    dim=12,
-    step_size=0.1,
-    bound=[-5.12, 5.12],
-    # reset_state=np.array([-7.0]*12, dtype=np.float32),
-    reset_state=np.random.uniform(-5, 5, 12),
-    action_dim = 6,
-    is_eval=True,
-    eval_steps=300
+env = FunctionDisStepEnv(
+    function=ackley,
+    dim=1,
+    step_size=1,
+    step_size_max=10,
+    bound=[-100, 100],
+    max_steps_explore=5,
+    reset_state=np.array([-400.0]*1, dtype=np.float32),
+    action_dim = 1,
+    failure_times_max1=100,  # 局部最优解最大失败次数
+    failure_times_max2=3,  # 探索模式最大失败次数
 )
- 
+
+# 创建PPO模型
+model_name = "0328PPO_dis_12dim_griewank_step01_max100000_reward_reset_failure"
 # 加载模型
-# model = PPO.load("./models/PPO_12dim_ackley_step0.1")
-model = PPO.load("./logs/0328PPO_dis_12dim_rastrigin_step01_max100000_reward_reset_failure_3510000_steps")
+# model = PPO.load(f"./logs/{model_name}", learning_rate=1e-4, env=env)
+checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)
+
+
+model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=r'./tensorboard_logs/', device='cpu', learning_rate=1e-4)
+model.learn(total_timesteps=100_000_000, log_interval=1, callback=checkpoint_cb)
+
+# 保存模型
+model.save(f"./models/{model_name}")
+del model
+
+# 加载模型
+model = PPO.load(f"./models/{model_name}")
 
 # 测试模型
-info_list = []
-step_list = []
-count = 0
-
 obs, info = env.reset()
 init_obs = obs
-init_val = info["value"]
-
+init_val = info['value']
 while True:
-    # action, _states = model.predict(obs)
     action, _states = model.predict(obs, deterministic=True)
     obs, reward, terminal, truncated, info = env.step(action)
-    info_list.append(info)
-    print(
-        f'state: {obs}, action: {action[0]}, selected: {min(int(action[1] * info["dim"]), info["dim"] - 1)}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}, dim: {info["dim"]}'
-    )
-    print("----------------------------------")
+    print(f'state: {obs}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
+    print('----------------------------------')
+
     if terminal or truncated:
         break
-
-steps, val = zip(*[(step["current_steps"], step["value"]) for step in info_list])
-plt.plot(steps, val)
-plt.xlabel("Step")
-plt.ylabel("Value")
-plt.title("Value per Step")
-
-
-print(
-    f'init_obs: {init_obs}, init_val: {init_val}, \nfinal_state: {obs}, final_val: {info["value"]}, \nbest: {info["best"]}, best_value: {info["best_value"]}'
-)
+print(f'init_obs: {init_obs}, init_val: {init_val}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
 env.close()
-plt.show()
-
-
-
-
-# obs, info = env.reset()
-# init_obs = obs
-# init_val = info['value']
-# while True:
-#     action, _states = model.predict(obs, deterministic=True)
-#     # action, _states = model.predict(obs, deterministic=False)
-#     obs, reward, terminal, truncated, info = env.step(action)
-#     print(f'state: {obs}, action: {action}, reward: {reward}, \nval: {info["value"]}, best: {info["best"]}, best_value: {info["best_value"]}, current_steps: {info["current_steps"]}')
-#     print('----------------------------------')
-
-#     if terminal or truncated:
-#         break
-# print(f'init_obs: {init_obs}, init_val: {init_val}, \nbest: {info["best"]}, best_value: {info["best_value"]}')
-# env.close()
