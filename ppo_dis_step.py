@@ -12,6 +12,12 @@ def sphere(x):
     return -np.sum(x ** 2)
 
 def ackley(x):
+    """
+    Ackley函数实现，支持任意维度
+
+    取值范围: [-32.768, 32.768]
+    最小值在f(0,...,0) = 0
+    """
     a = 20
     b = 0.2
     c = 2 * np.pi
@@ -95,15 +101,14 @@ def levy(x):
 # 创建环境
 env = FunctionDisStepEnv(
     function=ackley,
-    dim=1,
-    step_size=1,
-    step_size_max=10,
-    bound=[-100, 100],
+    dim=12,
+    step_size=0.1,
+    bound=[-32.768, 32.768],
     max_steps_explore=5,
-    reset_state=np.array([-400.0]*1, dtype=np.float32),
-    action_dim = 1,
-    failure_times_max1=100,  # 局部最优解最大失败次数
-    failure_times_max2=3,  # 探索模式最大失败次数
+    reset_state=np.array([-32.5]*12, dtype=np.float32),
+    action_dim = 12,
+    failure_times_max1=10000,  # 局部最优解最大失败次数
+    failure_times_max2=1000,  # 探索模式最大失败次数
 )
 
 # 创建PPO模型

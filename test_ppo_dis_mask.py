@@ -1,5 +1,5 @@
 import gymnasium as gym
-from function_env_discrete import FunctionDisEnv
+from function_env_dis_mask import FunctionDisMaskEnv
 from stable_baselines3 import PPO
 import numpy as np
 import matplotlib.pyplot as plt
@@ -83,7 +83,7 @@ def levy(x):
     return -result
 
 # 创建环境
-env = FunctionDisEnv(
+env = FunctionDisMaskEnv(
     function=rastrigin,
     dim=12,
     step_size=0.1,

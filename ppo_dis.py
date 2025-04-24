@@ -94,19 +94,19 @@ def levy(x):
 
 # 创建环境
 env = FunctionDisEnv(
-    function=griewank,
+    function=levy,
     dim=12,
-    step_size=2,
-    bound=[-600, 600],
-    max_steps_explore=5,
-    reset_state=np.array([-400.0]*12, dtype=np.float32),
-    action_dim = 8,
+    step_size=0.1,
+    bound=[-10, 10],
+    max_steps_explore=100.0,
+    reset_state=np.array([-5.1]*12, dtype=np.float32),
+    action_dim = 12,
     failure_times_max1=10000,  # 局部最优解最大失败次数
     failure_times_max2=3,  # 探索模式最大失败次数
 )
 
 # 创建PPO模型
-model_name = "0328PPO_dis_12dim_griewank_step01_max100000_reward_reset_failure"
+model_name = "0329PPO_dis_12dim_levy_step01_max10000_reward_reset_failure"
 # 加载模型
 # model = PPO.load(f"./logs/{model_name}", learning_rate=1e-4, env=env)
 checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)

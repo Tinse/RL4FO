@@ -1,23 +1,23 @@
 '''
-一个适用于单目标优化问题的强化学习环境，离散动作，技巧变步长
+一个适用于单目标优化问题的强化学习环境
+基于
 '''
 import gymnasium as gym
 import numpy as np
 from collections import deque
 
 class FunctionDisStepEnv(gym.Env):
-    def __init__(self, function, dim, bound, step_size = 0.1, max_steps_explore=100, reset_state=None, action_dim=1, failure_times_max1=1000, failure_times_max2=5, is_eval = False, eval_steps=100, step_size_max=1):
+    def __init__(self, function, dim, bound, step_size = 0.1, max_steps_explore=100, reset_state=None, action_dim=1, failure_times_max1=1000, failure_times_max2=5, is_eval = False, eval_steps=100):
         self.function = function
         self.dim = dim
         self.action_dim = action_dim
         self.bound = bound
-        self.action_space = gym.spaces.MultiDiscrete([2] * self.action_dim)  # 每个维度的动作空间为0代表-1, 1代表+1
+        self.action_space = gym.spaces.MultiDiscrete([2] * self.action_dim+[10])  # 每个维度的动作空间为0代表-1, 1代表+1, 最后一个维度0代表1, 1代表10
         # self.action_space = gym.spaces.MultiDiscrete([3] * self.action_dim)  # 每个维度的动作空间为0代表-1, 1代表0, 2代表+1
         self.observation_space = gym.spaces.Box(low=bound[0], high=bound[1], shape=(dim,), dtype=np.float32)
         self.is_eval = is_eval
         self.eval_steps = eval_steps
         self.step_size = step_size
-        self.step_size_max = step_size_max  # 最大步长
         self.state = None
         self.last_val = None
         self.val = None
@@ -83,7 +83,7 @@ class FunctionDisStepEnv(gym.Env):
         self.last_val = self.val
         self.last_best_val = self.best_value
         action = np.array(action)  # 将动作转换为numpy数组
-        self.state[0:self.action_dim] = np.clip(self.state[0:self.action_dim] + (action * 2 - 1) * self.step_size, self.bound[0], self.bound[1])
+        self.state[0:self.action_dim] = np.clip(self.state[0:self.action_dim] + (action[0:self.action_dim] * 2 - 1) * self.step_size *action[-1], self.bound[0], self.bound[1])
         # self.state[0:self.action_dim] = np.clip(self.state[0:self.action_dim] + (action - 1) * self.step_size, self.bound[0], self.bound[1])
         self.val = self.function(self.state)
         if self.val > self.best_value:
@@ -110,8 +110,12 @@ class FunctionDisStepEnv(gym.Env):
                 self.failure_times = 0   
         elif (self.failure_times >= self.failure_times_max1) :  # 如果不是探索模式，且达到最大失败次数,则修改认为是局部最优解
             print(f'failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
-            # self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
-            self.step_size = self.step_size_max  # 设置步长为最大步长
+            if self.max_steps >= self.max_steps_explore:  # 如果当前最大步数小于探索步数，则增加最大步数
+                self.max_steps *= 1.1  # 最大步数翻倍
+                print(f"### new max_steps: {self.max_steps}")
+            else:   
+                self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
+            self.max_steps = self.max_steps_explore  # 设置最大步数为探索步数
             self.explore_mode = True  # 进入探索模式
             self.failure_times = 0
 
