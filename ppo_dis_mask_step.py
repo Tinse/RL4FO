@@ -101,19 +101,20 @@ def levy(x):
 
 # 创建环境
 env = FunctionDisMaskStepEnv(
-    function=rastrigin,
+    function=griewank,
     dim=12,
     step_size=0.01,
-    bound=[-5.12, 5.12],
-    max_steps_explore=2.0,
-    reset_state=np.array([-1.12]*12, dtype=np.float32),
-    action_dim = 12,
+    bound=[-600, 600],
+    max_steps_explore=10.0,
+    # reset_state=np.array([-9.0]*12, dtype=np.float32),
+    reset_state=np.array([73.1468512345271, -45.26593997179781, 0.8761172772384085, -4.789395276694479, -36.134215660196084, 55.91877571113968, 9.036882677023637, -100.0403131667313, -52.750683573791115, 52.0634218546809, -68.13752178868114, -32.27691062735976], dtype=np.float32),
+    action_dim = 6,
     failure_times_max1=10000,  # 局部最优解最大失败次数
     failure_times_max2=1000,  # 探索模式最大失败次数
 )
 
 # 创建PPO模型
-model_name = "0328PPO_dis_mask_4dim_ackley_step1_reward_reset_failure"
+model_name = "0424PPO_dis_mask_step_12dim_griewank_step001_reward1"
 # 加载模型
 # model = PPO.load(f"./logs/{model_name}", learning_rate=1e-4, env=env)
 checkpoint_cb = CheckpointCallback(save_freq=10_000, save_path='./logs/', name_prefix=model_name)

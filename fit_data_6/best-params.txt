@@ -1,0 +1,1 @@
+{'hidden_layers': 5, 'hidden_dim_0': 444, 'hidden_dim_1': 463, 'hidden_dim_2': 506, 'hidden_dim_3': 261, 'hidden_dim_4': 437, 'dropout_rate': 0.017934694854819317, 'lr': 0.0001479912489756518, 'epochs': 99}
