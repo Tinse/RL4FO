@@ -60,7 +60,7 @@ def predict(input_x):
     y_pre = model(x).detach().numpy()
     # end_time = perf_counter()
     # print(f'used time: {(end_time - start_time) * 1000:.2f}ms')
-    return scaler_Y.inverse_transform(y_pre)[0]
+    return scaler_Y.inverse_transform(y_pre)[0][45]
 
 
 def predicts(input_x):

@@ -83,7 +83,8 @@ class FunctionDisMaskStepEnv(gym.Env):
         self.last_val = self.val
         self.last_best_val = self.best_value
         action = np.array(action)  # 将动作转换为numpy数组
-        self.state[action[1]] = np.clip(self.state[action[1]] + (action[0] * 2 - 1) * self.step_size* 2**action[2], self.bound[0], self.bound[1])
+        self.state[action[1]] = np.clip(self.state[action[1]] + (action[0] * 2 - 1) * self.step_size* action[2], self.bound[0], self.bound[1])
+        # self.state[action[1]] = np.clip(self.state[action[1]] + (action[0] * 2 - 1) * self.step_size* 2**action[2], self.bound[0], self.bound[1])
         # self.state[0:self.action_dim] = np.clip(self.state[0:self.action_dim] + (action - 1) * self.step_size, self.bound[0], self.bound[1])
         self.val = self.function(self.state)
         if self.val > self.best_value:
@@ -103,9 +104,11 @@ class FunctionDisMaskStepEnv(gym.Env):
         if not terminal and truncated:  # 如果没有改进，且达到最大步数，则失败次数加1
             self.failure_times += 1
         if self.explore_mode:  # 如果处于探索模式，则失败次数加1
+            # print(f'self.failure_times:{self.failure_times}, self.max_steps:{self.max_steps}, val: {self.best_value}')
             if (self.failure_times >= self.failure_times_max2) :  # 如果达到最大失败次数, 增加最大步数
                 print(f'2nd failure!!!!! self.max_steps:{self.max_steps}, reset: {self.reset_state}, val: {self.best_value}')
-                self.max_steps += 1  # 最大步数增加
+                # self.max_steps += 1  # 最大步数增加
+                # self.max_steps = 100000
                 # # print(f'self.max_steps:{self.max_steps}')
                 # self.max_steps = min(self.max_steps, self.max_steps_explore * 1000)  # 最大步数不超过探索步数的1000倍    
                 self.failure_times = 0   
@@ -125,6 +128,31 @@ class FunctionDisMaskStepEnv(gym.Env):
         # reward = self.best_value - self.last_best_val   # 最优值的改进幅度
         # reward = self.best_value - self.last_val   # 最优值的改进幅度
         # reward = (self.last_val - self.val) + (-self.val) + (self.best_value - self.last_best_val)  # 三者的综合
+
+
+        # # 计算平滑边界惩罚
+        # penalty = 0.0
+        # margin = 0.2  # 定义离边界多少以内开始惩罚
+        # k = 1000     # 惩罚系数，可根据需要调整
+        # for i in range(12):
+        #     # lower_bound = self.bounds[i, 0]
+        #     # upper_bound = self.bounds[i, 1]
+        #     lower_bound = self.bound[0]
+        #     upper_bound = self.bound[1]
+        #     d_lower = self.state[i] - lower_bound
+        #     d_upper = upper_bound - self.state[i]
+        #     d_min = min(d_lower, d_upper)
+        #     if d_min < margin:
+        #         # 当接近边界时，采用二次函数施加惩罚，越近惩罚越大
+        #         penalty += - k * ((margin - d_min) / margin) ** 2
+        
+        # # 如果状态实际超出边界，也可以设定一个极大惩罚(例如 -1000)，这里我们主要关注平滑惩罚
+        # if np.any(self.state[0:12] <= self.bound[0]) or np.any(self.state[0:12] >= self.bound[1]):
+        #     penalty = -200
+        # print(f'penalty: {penalty}')
+        # # 将平滑惩罚加入奖励中
+        # reward += penalty
+
         observation = self._get_obs()
         info = self._get_info()
         

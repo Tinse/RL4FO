@@ -2,6 +2,7 @@ from fit_data.user import predict
 from stable_baselines3 import PPO
 from function_env import FunctionEnv
 import numpy as np
+from fit_data_6.BPNN_predict import predict
 
 # 创建一个新的输入数据
 # X_new = np.array([0.995341739, 0.786010426, -0.886444809, 0.182665509, 1.73261416, 1.087535277, -0.051123515, 0.407043123, 0.597274363, -0.618234349, -0.19764553, -0.25507233])

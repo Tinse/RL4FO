@@ -1,0 +1,12 @@
+使用说明：
+用于单个预测输入：from BPNN_predict import predict
+用于一次性多个预测输入：from BPNN_predict import predicts
+模型评价，计算R平方，并保存估计值：运行evaluate.py文件
+用于估计值可视化：运行show_pre.py文件
+调用pso算法求取最值，get_answer.py
+
+其他说明：
+bpnn-model.pth训练好的模型
+BPNN_optuna.py 调整超参
+BPNN_with_params.py训练原文件，不建议直接cv进后续代码
+scaler_X.pkl归一化文件
